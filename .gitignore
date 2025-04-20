@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data
+data/
+
+# Generated images
+images/
+
+# Latex mid files
+*.aux
+*.log
+*.out
+*.tex
+*.toc
+*.bbl
+*.blg
+*.bib
+*.bcf
+*.run.xml
+*.synctex
+*.synctex.gz
