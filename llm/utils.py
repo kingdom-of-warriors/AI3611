@@ -81,6 +81,7 @@ def generate_model_save_path(args, suffix=None):
     params.append(f"hid{args.nhid}")
     params.append(f"lay{args.nlayers}")
     params.append(f"dp{args.dropout}")
+    params.append(f"bptt{args.bptt}")
     
     # 添加特定模型参数
     if args.model in ['Transformer', 'SpeechAwareTransformer']:
