@@ -5,6 +5,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.onnx
+import wandb
 
 import data
 
@@ -29,7 +30,7 @@ parser.add_argument('--lr', type=float, default=1,
                     help='initial learning rate')
 parser.add_argument('--clip', type=float, default=0.25,
                     help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=40,
+parser.add_argument('--epochs', type=int, default=40,/ailab/user/yangliujia/codes/genesis/AI3611/llm/main.py
                     help='upper epoch limit')
 parser.add_argument('--batch_size', type=int, default=128, metavar='N',
                     help='batch size')
@@ -53,7 +54,16 @@ parser.add_argument('--nhead', type=int, default=2,
                     help='the number of heads in the encoder/decoder of the transformer model')
 parser.add_argument('--dry-run', action='store_true',
                     help='verify the code and the model')
+parser.add_argument('--wandb', action='store_true',
+                    help='use wandb to record the training process')
+parser.add_argument('--wandb-mode', type=str, default='online')
 args = parser.parse_args()
+
+if args.wandb:
+    # initialize wandb
+    wandb.init(project="AI3611_llm", name=f"{args.model}-{time.strftime('%Y%m%d-%H%M%S')}", mode=args.wandb_mode)
+    # record hyper-parameters
+    wandb.config.update(args)   
 
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
@@ -100,13 +110,31 @@ lr = args.lr
 try:
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
-        train(model, args.model, corpus, train_data, criterion, lr, args.clip, args.bptt, args.batch_size, epoch, args.log_interval, args.dry_run)
+        train_loss = train(model, args.model, corpus, train_data, criterion, lr, args.clip, args.bptt, args.batch_size, epoch, args.log_interval, args.dry_run)
         val_loss = evaluate(model, args.model, corpus, val_data, args.batch_size, args.bptt, criterion)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                 'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
                                            val_loss, math.exp(val_loss)))
+        
+        # 添加测试集评估
+        test_loss = evaluate(model, args.model, corpus, test_data, args.batch_size, args.bptt, criterion)
+        print('| end of epoch {:3d} | test loss {:5.2f} | test ppl {:8.2f}'.format(
+            epoch, test_loss, math.exp(test_loss)))
         print('-' * 89)
+        
+        # record to wandb
+        if args.wandb:
+            wandb.log({
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_ppl": math.exp(train_loss),
+                "val_loss": val_loss,
+                "val_ppl": math.exp(val_loss),
+                "test_loss": test_loss,
+                "test_ppl": math.exp(test_loss),
+                "learning_rate": lr
+            })
         
         # generate save path of present model
         save_path = generate_model_save_path(args)
@@ -144,6 +172,10 @@ print('=' * 89)
 print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
     test_loss, math.exp(test_loss)))
 print('=' * 89)
+
+# close wandb
+if args.wandb:
+    wandb.finish()
 
 if len(args.onnx_export) > 0:
     # Export the model in ONNX format.

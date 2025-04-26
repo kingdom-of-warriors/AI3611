@@ -11,6 +11,11 @@ def train(model, model_type, corpus, train_data, criterion, lr, clip, bptt, batc
     ntokens = len(corpus.dictionary)
     if model_type == "RNNModel":
         hidden = model.init_hidden(batch_size)
+    
+    # 添加变量来记录整个epoch的平均损失
+    epoch_loss = 0.0
+    total_batches = 0
+    
     for batch, i in enumerate(range(0, train_data.size(0) - 1, bptt)):
         data, targets = get_batch(bptt, train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
@@ -31,6 +36,10 @@ def train(model, model_type, corpus, train_data, criterion, lr, clip, bptt, batc
             p.data.add_(p.grad, alpha=-lr)
 
         total_loss += loss.item()
+        
+        # 累计损失用于计算整个epoch的平均值
+        epoch_loss += loss.item()
+        total_batches += 1
 
         if batch % log_interval == 0 and batch > 0:
             cur_loss = total_loss / log_interval
@@ -43,3 +52,6 @@ def train(model, model_type, corpus, train_data, criterion, lr, clip, bptt, batc
             start_time = time.time()
         if dry_run:
             break
+    
+    # 返回整个epoch的平均损失
+    return epoch_loss / total_batches if total_batches > 0 else 0.0
