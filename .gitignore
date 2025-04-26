@@ -28,3 +28,7 @@ images/
 *.run.xml
 *.synctex
 *.synctex.gz
+
+# models
+experiments/
+ckpt/
