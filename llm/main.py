@@ -90,7 +90,7 @@ ntokens = len(corpus.dictionary)
 if args.model == 'Transformer':
     model = TransformerModel(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout).to(device)
 elif args.model == 'SpeechAwareTransformer':
-    model = SpeechAwareTransformer(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout).to(device)
+    model = SpeechAwareTransformer(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout, args.bptt).to(device)
 else:
     model = RNNModel(args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied).to(device)
 

@@ -32,3 +32,7 @@ images/
 # models
 experiments/
 ckpt/
+
+# other apps
+clash-for-linux-backup/
+report/
