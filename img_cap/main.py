@@ -53,16 +53,16 @@ class Runner(object):
             vocab_set=vocab_set, return_type='corpus',
             load_img_to_memory=False)
         train_transformations = transforms.Compose([
-            transforms.Resize(256),  # smaller edge of image resized to 256
-            transforms.RandomCrop(256),  # get 256x256 crop from random location
+            transforms.Resize(224),  # smaller edge of image resized to 224
+            transforms.RandomCrop(224),  # get 224x224 crop from random location
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
         ])
         eval_transformations = transforms.Compose([
-            transforms.Resize(256),  # smaller edge of image resized to 256
-            transforms.CenterCrop(256),  # get 256x256 crop from random location
+            transforms.Resize(224),  # smaller edge of image resized to 224
+            transforms.CenterCrop(224),  # get 224x224 crop from random location
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
@@ -297,8 +297,8 @@ class Runner(object):
         vocab_size = len(vocab)
 
         eval_transformations = transforms.Compose([
-            transforms.Resize(256),  # smaller edge of image resized to 256
-            transforms.CenterCrop(256),  # get 256x256 crop from random location
+            transforms.Resize(224),  # smaller edge of image resized to 224
+            transforms.CenterCrop(224),  # get 224x224 crop from random location
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
@@ -311,7 +311,7 @@ class Runner(object):
         test_loader = torch.utils.data.DataLoader(test_set,
             batch_size=1, shuffle=False, collate_fn=eval_collate_fn)
 
-        model = Captioner(encoded_image_size=14, encoder_dim=2048,
+        model = Vit_Captioner(encoded_image_size=14, encoder_dim=768,
                           attention_dim=args["attention_dim"],
                           embed_dim=args["embedding_dim"],
                           decoder_dim=args["decoder_size"],

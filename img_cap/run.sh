@@ -9,6 +9,5 @@
 
 module load openjdk/11.0.17_8
 
-
 python main.py train_evaluate --config_file configs/resnet101_attention.yaml
 

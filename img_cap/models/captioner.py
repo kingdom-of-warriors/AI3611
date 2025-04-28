@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from decoder import DecoderWithAttention
-from resnet_encoder import Encoder
-from vit_encoder import ViTEncoder
+from .decoder import DecoderWithAttention
+from .resnet_encoder import Encoder
+from .vit_encoder import ViTEncoder
 
 class Res_Captioner(nn.Module):
     def __init__(self, encoded_image_size, attention_dim, embed_dim,

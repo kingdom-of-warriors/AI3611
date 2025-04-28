@@ -44,7 +44,6 @@ class ViTEncoder(nn.Module):
 
         # 输入: (batch_size, 3, H, W)
         # 输出: (batch_size, num_patches, feature_dim)
-        import pdb; pdb.set_trace()
         x = self.vit.conv_proj(images)
         x = x.flatten(2).transpose(1, 2)
 

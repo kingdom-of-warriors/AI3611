@@ -1,11 +1,11 @@
 model: resnet101_attention
 outputpath: experiments/resnet101_attention
 
-dataset_base_path: /lustre/home/acct-stu/stu433/data/image_captioning
+dataset_base_path: data
 vocab_path: utils/vocab_set.pkl
 embedding_dim: 300
-attention_dim: 256
-decoder_size: 256
+attention_dim: 224
+decoder_size: 224
 sample_method: greed # 'greed' or 'beam'
 train_args:
     batch_size: 128
