@@ -17,7 +17,7 @@ from datasets.flickr8k import Flickr8kDataset
 from utils.metrics import bleu_score_fn
 from utils.utils_torch import words_from_tensors_fn
 from utils.util import get_logger
-from models import Captioner
+from models import ViT_Captioner
 
 
 class Runner(object):
@@ -180,8 +180,8 @@ class Runner(object):
         Path(args["outputpath"]).mkdir(parents=True, exist_ok=True)
         logger = get_logger(Path(args["outputpath"]) / "train.log")
 
-        model = Captioner(encoded_image_size=14,
-                          encoder_dim=2048,
+        model = ViT_Captioner(encoded_image_size=14,
+                          encoder_dim=768,
                           attention_dim=args['attention_dim'],
                           embed_dim=args['embedding_dim'],
                           decoder_dim=args['decoder_size'],
