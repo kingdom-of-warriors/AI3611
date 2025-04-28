@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-
+import math
 
 class Attention(nn.Module):
     """
@@ -171,6 +171,8 @@ class DecoderWithAttention(nn.Module):
         :param encoder_out = [b, enc_image_size, enc_image_size, 2048]
         :return [b, max_len]
         """
+        if encoder_out.dim() == 3:
+            encoder_out = encoder_out.view(encoder_out.size(0), -1, int(math.sqrt(encoder_out.size(1))), encoder_out.size(2))
         enc_image_size = encoder_out.size(1)
         encoder_dim = encoder_out.size(3)
         batch_size = encoder_out.size(0)

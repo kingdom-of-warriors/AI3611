@@ -1,11 +1,12 @@
-model: resnet101_attention
-outputpath: experiments/resnet101_attention
+model: vit
+outputpath: experiments/vit
 
 dataset_base_path: data
 vocab_path: utils/vocab_set.pkl
+image_len: 224
 embedding_dim: 300
-attention_dim: 224
-decoder_size: 224
+attention_dim: 256
+decoder_size: 256
 sample_method: greed # 'greed' or 'beam'
 train_args:
     batch_size: 128

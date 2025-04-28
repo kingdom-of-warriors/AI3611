@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torchvision
 
-
 class Encoder(nn.Module):
     """
     Encoder.

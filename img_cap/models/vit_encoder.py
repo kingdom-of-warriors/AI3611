@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torchvision
 
-class ViTEncoder(nn.Module):
+class VitEncoder(nn.Module):
     """
     基于 Vision Transformer (ViT) 的图像编码器。
     """
@@ -15,7 +15,7 @@ class ViTEncoder(nn.Module):
         :param model_name: 要使用的 torchvision ViT 模型名称 (例如 'vit_b_16')。
         :param pretrained: 是否加载预训练权重。
         """
-        super(ViTEncoder, self).__init__()
+        super(VitEncoder, self).__init__()
         self.enc_image_size = encoded_image_size
 
         # 加载预训练的 ViT 模型
@@ -92,7 +92,7 @@ class ViTEncoder(nn.Module):
 
 # --- 使用示例 (可选) ---
 if __name__ == '__main__':
-    encoder = ViTEncoder(encoded_image_size=14, model_name='vit_b_16', pretrained=True)
+    encoder = VitEncoder(encoded_image_size=14, model_name='vit_b_16', pretrained=True)
     encoder.eval() # 设置为评估模式
 
     # 创建一个符合 vit_b_16 期望输入的示例批次 (batch_size=4, channels=3, height=224, width=224)

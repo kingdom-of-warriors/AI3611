@@ -17,7 +17,8 @@ from datasets.flickr8k import Flickr8kDataset
 from utils.metrics import bleu_score_fn
 from utils.utils_torch import words_from_tensors_fn
 from utils.util import get_logger
-from models import ViT_Captioner
+from models import Vit_Captioner
+from models import Res_Captioner
 
 
 class Runner(object):
@@ -35,7 +36,7 @@ class Runner(object):
             torch.backends.cudnn.benchmark = False
         self.device = torch.device(device)
     
-    def get_dataloaders(self, dataset_base_path, batch_size):
+    def get_dataloaders(self, dataset_base_path, batch_size, img_len):
         train_set = Flickr8kDataset(
             dataset_base_path=dataset_base_path, dist='train',
             return_type='tensor', load_img_to_memory=False)
@@ -53,16 +54,16 @@ class Runner(object):
             vocab_set=vocab_set, return_type='corpus',
             load_img_to_memory=False)
         train_transformations = transforms.Compose([
-            transforms.Resize(224),  # smaller edge of image resized to 224
-            transforms.RandomCrop(224),  # get 224x224 crop from random location
+            transforms.Resize(img_len),  # smaller edge of image resized to img_len
+            transforms.RandomCrop(img_len),  # get img_lenximg_len crop from random location
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
         ])
         eval_transformations = transforms.Compose([
-            transforms.Resize(224),  # smaller edge of image resized to 224
-            transforms.CenterCrop(224),  # get 224x224 crop from random location
+            transforms.Resize(img_len),  # smaller edge of image resized to img_len
+            transforms.CenterCrop(img_len),  # get img_lenximg_len crop from random location
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
@@ -170,7 +171,8 @@ class Runner(object):
         args = dict(config, **kwargs)
         
         dataloaders = self.get_dataloaders(args["dataset_base_path"],
-                                           args["train_args"]["batch_size"])
+                                           args["train_args"]["batch_size"],
+                                           args["image_len"])
         vocab_set = dataloaders["train"].dataset.get_vocab()
         vocab, word2idx, idx2word, max_len = vocab_set
         with open(args['vocab_path'], 'wb') as f:
@@ -180,7 +182,7 @@ class Runner(object):
         Path(args["outputpath"]).mkdir(parents=True, exist_ok=True)
         logger = get_logger(Path(args["outputpath"]) / "train.log")
 
-        model = ViT_Captioner(encoded_image_size=14,
+        model = Vit_Captioner(encoded_image_size=14,
                           encoder_dim=768,
                           attention_dim=args['attention_dim'],
                           embed_dim=args['embedding_dim'],
@@ -297,8 +299,8 @@ class Runner(object):
         vocab_size = len(vocab)
 
         eval_transformations = transforms.Compose([
-            transforms.Resize(224),  # smaller edge of image resized to 224
-            transforms.CenterCrop(224),  # get 224x224 crop from random location
+            transforms.Resize(args["image_len"]),  # smaller edge of image resized to img_len
+            transforms.CenterCrop(args["image_len"]),  # get img_lenximg_len crop from random location
             transforms.ToTensor(),  # convert the PIL Image to a tensor
             transforms.Normalize((0.485, 0.456, 0.406),  # normalize image for pre-trained model
                                  (0.229, 0.224, 0.225))
@@ -310,7 +312,7 @@ class Runner(object):
             [x[1] for x in batch], [x[2] for x in batch], [x[3] for x in batch])
         test_loader = torch.utils.data.DataLoader(test_set,
             batch_size=1, shuffle=False, collate_fn=eval_collate_fn)
-
+            
         model = Vit_Captioner(encoded_image_size=14, encoder_dim=768,
                           attention_dim=args["attention_dim"],
                           embed_dim=args["embedding_dim"],

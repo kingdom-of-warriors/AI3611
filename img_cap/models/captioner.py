@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .decoder import DecoderWithAttention
 from .resnet_encoder import Encoder
-from .vit_encoder import ViTEncoder
+from .vit_encoder import VitEncoder
 
 class Res_Captioner(nn.Module):
     def __init__(self, encoded_image_size, attention_dim, embed_dim,
@@ -32,11 +32,11 @@ class Res_Captioner(nn.Module):
             method=method, return_alpha=return_alpha)
 
 
-class ViT_Captioner(nn.Module):
+class Vit_Captioner(nn.Module):
     def __init__(self, encoded_image_size, attention_dim, embed_dim,
         decoder_dim, vocab_size, encoder_dim=768, dropout=0.5, **kwargs):
         super().__init__()
-        self.encoder = ViTEncoder(encoded_image_size=encoded_image_size)
+        self.encoder = VitEncoder(encoded_image_size=encoded_image_size)
         self.decoder = DecoderWithAttention(attention_dim, embed_dim,
             decoder_dim, vocab_size, encoder_dim, dropout)
 
