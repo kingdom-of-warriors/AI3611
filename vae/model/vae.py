@@ -1,30 +1,26 @@
 import os
-from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torch.optim import Adam
 from torchvision.utils import save_image
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-
+import matplotlib.pyplot as plt
+import numpy as np
 class VAE(nn.Module):
     def __init__(self, input_dim=784, hidden_dim=400, latent_dim=2):
         super(VAE, self).__init__()
         
-        # 编码器
+        # encoder
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU()
         )
         
-        # 均值和方差
+        # mean and std
         self.fc_mu = nn.Linear(hidden_dim, latent_dim)
         self.fc_var = nn.Linear(hidden_dim, latent_dim)
         
-        # 解码器
+        # decoder
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, hidden_dim),
             nn.ReLU(),
@@ -168,3 +164,54 @@ def generate_and_save_images(model, test_loader, epoch, device, save_dir='./imag
             samples = model.generate_from_latent(z)
             save_image(samples.view(100, 1, 28, 28).cpu(),
                     f'{save_dir}/sample_z2dim_{epoch+1}.png', nrow=10)
+            
+
+def plot_latent_space(model, data_loader, device, save_path='./images/latent_space.png'):
+    """
+    Visualizes the latent space distribution for a VAE with latent_dim=2.
+
+    Args:
+        model: The trained VAE model (must have latent_dim=2).
+        data_loader: DataLoader for the dataset (e.g., test_loader).
+        device: The device to run the model on ('cuda' or 'cpu').
+        save_path: Path to save the generated plot.
+    """
+    if model.latent_dim != 2:
+        print("Warning: Latent space plotting is designed for latent_dim=2.")
+    model.eval()
+    latent_vectors = []
+    labels = []
+
+    with torch.no_grad():
+        for data, target in data_loader: # Assuming loader yields (data, labels)
+            data = data.to(device)
+            batch_size = data.size(0)
+            data_flat = data.view(batch_size, -1) # Flatten images
+            mu, _ = model.encode(data_flat) # Get latent mean
+
+            latent_vectors.append(mu.cpu().numpy())
+            labels.append(target.cpu().numpy())
+
+    latent_vectors = np.concatenate(latent_vectors, axis=0)
+    labels = np.concatenate(labels, axis=0)
+
+    # Create the plot
+    plt.figure(figsize=(10, 8))
+    scatter = plt.scatter(latent_vectors[:, 0], latent_vectors[:, 1], c=labels, cmap='tab10', s=5) # Use tab10 colormap, small points
+    
+    # Add legend
+    handles, _ = scatter.legend_elements(prop='colors')
+    unique_labels = np.unique(labels)
+    legend_labels = [str(l) for l in unique_labels]
+    plt.legend(handles, legend_labels, title="Digits")
+
+    # Add labels and title
+    plt.xlabel("Latent Dimension 1 (x)")
+    plt.ylabel("Latent Dimension 2 (y)")
+    plt.title("Latent Space Distribution (MNIST Test Set)")
+    plt.grid(True)
+    
+    # Save the plot
+    plt.savefig(save_path)
+    print(f"Latent space plot saved to {save_path}")
+    plt.close() # Close the figure to free memory

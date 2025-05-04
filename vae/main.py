@@ -5,68 +5,146 @@ from tqdm import tqdm
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-from vae import VAE, train_one_step, evaluate, generate_and_save_images
+# Assume model.py contains VAE, train_one_step, evaluate
+from model import VAE, train_one_step, evaluate, generate_and_save_images, plot_latent_space
+import wandb
 
-def main():
-    # 创建图像保存目录
-    if not os.path.exists('./images'):
-        os.makedirs('./images')
+# --- Wandb Configuration ---
+WANDB_PROJECT = "vae-mnist-example" # Change to your project name
+WANDB_ENTITY = None # Replace with your wandb username or team name if desired
+
+def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_epochs=200, batch_size=128, lr=1e-3):
+    """Trains a VAE model with specified latent dim and logs to wandb."""
+
+    # --- Initialize Wandb ---
+    run = wandb.init(
+        project=WANDB_PROJECT,
+        entity=WANDB_ENTITY,
+        name=f"vae_latent_dim_{latent_dim}", # Give each run a descriptive name
+        config={
+            "learning_rate": lr,
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "latent_dim": latent_dim,
+            "dataset": "MNIST",
+        }
+    )
+
+    # Create directories if they don't exist
+    save_dir = f'./images/z{latent_dim}'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # Initialize Model and Optimizer
+    print(f"Training VAE with latent_dim = {latent_dim}")
+    model = VAE(latent_dim=latent_dim)
+    model = model.to(device)
+    optimizer = Adam(model.parameters(), lr=wandb.config.learning_rate) # Use wandb config
+
+    # --- Watch Model (Optional: logs gradients and parameters) ---
+    wandb.watch(model, log="gradients", log_freq=100) # Log gradients every 100 batches
+
+    # Training Loop
+    for epoch in tqdm(range(wandb.config.epochs), desc=f"Training Z={latent_dim}"):
+        model.train() # Set model to training mode
+        total_train_loss = 0
+        total_recon_loss = 0
+        total_kl_loss = 0
+
+        for batch_idx, (data, _) in enumerate(train_loader):
+            # Assuming train_one_step returns: total_loss, recon_loss, kl_loss for the batch
+            # Ensure these are detached tensors before calling .item() if they require grad
+            batch_loss, batch_recon_loss, batch_kl_loss = train_one_step(model, data, optimizer, device)
+
+            # Use .item() to get scalar value and avoid memory leaks
+            total_train_loss += batch_loss
+            total_recon_loss += batch_recon_loss
+            total_kl_loss += batch_kl_loss
+
+        # Calculate average losses for the epoch (per sample)
+        avg_train_loss = total_train_loss / len(train_loader.dataset)
+        avg_recon_loss = total_recon_loss / len(train_loader.dataset)
+        avg_kl_loss = total_kl_loss / len(train_loader.dataset)
+
+        # --- Modified log_dict structure ---
+        log_dict = {
+            # Group training losses under "train/losses"
+            "train/losses": {
+                "total": avg_train_loss,
+                "reconstruction": avg_recon_loss,
+                "kl_divergence": avg_kl_loss,
+            },
+             # You can still log epoch separately if needed, though wandb uses step implicitly
+             "epoch": epoch + 1
+        }
+        # --- End Modification ---
+
+        # Evaluate and generate images periodically
+        if (epoch + 1) % 20 == 0:
+            # Assuming evaluate returns: avg_val_loss, avg_val_recon_loss, avg_val_kl_loss
+            val_loss, val_recon, val_kl = evaluate(model, test_loader, device)
+            print(f'\nEpoch: {epoch+1} Val Loss: {val_loss:.4f} Recon: {val_recon:.4f} KL: {val_kl:.4f}')
+
+            # --- Modified log_dict update ---
+            # Group validation losses under "val/losses"
+            log_dict.update({
+                 "val/losses": {
+                    "total": val_loss,
+                    "reconstruction": val_recon,
+                    "kl_divergence": val_kl,
+                 }
+            })
+            # --- End Modification ---
+            generate_and_save_images(model, test_loader, epoch, device, save_dir=save_dir)
+
+
+        # Log metrics to wandb for the current epoch
+        wandb.log(log_dict) # wandb automatically uses the step associated with the run
+
+        if (epoch+1) % 5 == 0: # Print average training loss less frequently
+             print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
+        # Save model checkpoint every 50 epochs
+        if ((epoch + 1) % 50 == 0) & (latent_dim == 2):
+            plot_latent_space(model, train_loader, device, save_path=save_dir)
     
+    # --- Finish Wandb Run ---
+    run.finish()
+    print(f"Finished training VAE with latent_dim = {latent_dim}")
+
+# The main() function remains the same as before
+def main():
     # 设置设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+    print(f"Using device: {device}")
+
     # 加载数据
+    print("Loading MNIST dataset...")
     train_dataset = datasets.MNIST(root='./data/', train=True, transform=transforms.ToTensor(), download=True)
-    test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=False)
+    test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=True) # Set download=True just in case
 
     batch_size = 128
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
-    
-    # 训练隐层维度为1的VAE
-    print("训练隐层维度为1的VAE")
-    vae_z1 = VAE(latent_dim=1)
-    vae_z1 = vae_z1.to(device)
-    optimizer_z1 = Adam(vae_z1.parameters(), lr=1e-3)
-    
-    # 训练循环
-    num_epochs = 200
-    for epoch in tqdm(range(num_epochs)):
-        train_loss = 0
-        for batch_idx, (data, _) in enumerate(train_loader):
-            batch_loss, recon_loss, kl_loss = train_one_step(vae_z1, data, optimizer_z1, device)
-            train_loss += batch_loss
-        
-        avg_loss = train_loss / len(train_loader.dataset)
-        print(f'Epoch: {epoch+1}, Loss: {avg_loss:.4f}')
-        
-        # 每10个epoch评估和生成图像
-        if (epoch + 1) % 10 == 0:
-            val_loss, val_recon, val_kl = evaluate(vae_z1, test_loader, device)
-            print(f'验证集 - 总损失: {val_loss:.4f}, 重建损失: {val_recon:.4f}, KL损失: {val_kl:.4f}')
-            generate_and_save_images(vae_z1, test_loader, epoch, device, save_dir='./images/z1')
-    
-    # 训练隐层维度为2的VAE
-    print("训练隐层维度为2的VAE")
-    vae_z2 = VAE(latent_dim=2)
-    vae_z2 = vae_z2.to(device)
-    optimizer_z2 = Adam(vae_z2.parameters(), lr=1e-3)
-    
-    # 训练循环
-    for epoch in tqdm(range(num_epochs)):
-        train_loss = 0
-        for batch_idx, (data, _) in enumerate(train_loader):
-            batch_loss, recon_loss, kl_loss = train_one_step(vae_z2, data, optimizer_z2, device)
-            train_loss += batch_loss
-        
-        avg_loss = train_loss / len(train_loader.dataset)
-        print(f'Epoch: {epoch+1}, Loss: {avg_loss:.4f}')
-        
-        # 每10个epoch评估和生成图像
-        if (epoch + 1) % 10 == 0:
-            val_loss, val_recon, val_kl = evaluate(vae_z2, test_loader, device)
-            print(f'验证集 - 总损失: {val_loss:.4f}, 重建损失: {val_recon:.4f}, KL损失: {val_kl:.4f}')
-            generate_and_save_images(vae_z2, test_loader, epoch, device, save_dir='./images/z2')
+    # Consider adding drop_last=True to train_loader if dataset size is not divisible by batch_size
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    print("Dataset loaded.")
+
+    # Train VAE with latent_dim = 1
+    train_model_with_wandb(latent_dim=1,
+                           train_loader=train_loader,
+                           test_loader=test_loader,
+                           device=device,
+                           num_epochs=200, # Can be overridden by wandb config if needed
+                           batch_size=batch_size,
+                           lr=1e-3)
+
+    # Train VAE with latent_dim = 2
+    train_model_with_wandb(latent_dim=2,
+                           train_loader=train_loader,
+                           test_loader=test_loader,
+                           device=device,
+                           num_epochs=200,
+                           batch_size=batch_size,
+                           lr=1e-3)
 
 if __name__ == "__main__":
     main()

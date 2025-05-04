@@ -36,3 +36,6 @@ ckpt/
 # other apps
 clash-for-linux-backup/
 report/
+
+# logs
+wandb/
