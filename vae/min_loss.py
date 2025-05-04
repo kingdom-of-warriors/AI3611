@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
 # Assume model.py contains VAE, train_one_step, evaluate
-from model import VAE, train_one_step, evaluate
+from model import VAE, train_one_step, evaluate, plot_latent_space
 
 def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, batch_size=128, lr=1e-3):
     """Trains a VAE model with specified latent dim and logs to wandb."""
@@ -50,8 +50,11 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
             val_loss, val_recon, val_kl = evaluate(model, test_loader, device)
             print(f'\nEpoch: {epoch+1} Val Loss: {val_loss:.4f} Recon: {val_recon:.4f} KL: {val_kl:.4f}')
 
-        if (epoch+1) % 5 == 0: # Print average training loss less frequently
-             print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
+        if (epoch + 1) % 5 == 0: # Print average training loss less frequently
+            print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
+
+        if (epoch + 1) % 50 == 0:
+            plot_latent_space(model, train_loader, device, save_path=save_dir)
     
     print(f"Finished training VAE with latent_dim = {latent_dim}")
 

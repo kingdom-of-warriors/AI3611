@@ -6,6 +6,9 @@ import torch.nn.functional as F
 from torchvision.utils import save_image
 import matplotlib.pyplot as plt
 import numpy as np
+
+from sklearn.manifold import TSNE
+
 class VAE(nn.Module):
     def __init__(self, input_dim=784, hidden_dim=400, latent_dim=2):
         super(VAE, self).__init__()
@@ -168,50 +171,83 @@ def generate_and_save_images(model, test_loader, epoch, device, save_dir='./imag
 
 def plot_latent_space(model, data_loader, device, save_path='./images/latent_space.png'):
     """
-    Visualizes the latent space distribution for a VAE with latent_dim=2.
+    Visualizes the latent space distribution. If latent_dim > 2, uses t-SNE
+    to reduce dimensionality to 2D for plotting.
 
     Args:
-        model: The trained VAE model (must have latent_dim=2).
+        model: The trained VAE model.
         data_loader: DataLoader for the dataset (e.g., test_loader).
         device: The device to run the model on ('cuda' or 'cpu').
         save_path: Path to save the generated plot.
     """
-    if model.latent_dim != 2:
-        print("Warning: Latent space plotting is designed for latent_dim=2.")
+    if model.latent_dim < 2:
+        print(f"Skipping latent space plot: Function requires latent_dim >= 2, but model has latent_dim={model.latent_dim}.")
+        return
+
     model.eval()
     latent_vectors = []
     labels = []
+    plot_title = f"Latent Space Distribution (MNIST Test Set, d={model.latent_dim})"
 
+    print("Encoding data points to latent space...")
     with torch.no_grad():
-        for data, target in data_loader: # Assuming loader yields (data, labels)
+        for data, target in data_loader:
             data = data.to(device)
             batch_size = data.size(0)
-            data_flat = data.view(batch_size, -1) # Flatten images
-            mu, _ = model.encode(data_flat) # Get latent mean
-
+            data_flat = data.view(batch_size, -1)
+            mu, _ = model.encode(data_flat)
             latent_vectors.append(mu.cpu().numpy())
             labels.append(target.cpu().numpy())
 
     latent_vectors = np.concatenate(latent_vectors, axis=0)
     labels = np.concatenate(labels, axis=0)
+    print(f"Encoded {len(labels)} data points.")
 
-    # Create the plot
+    # --- Dimensionality Reduction if latent_dim > 2 ---
+    if model.latent_dim > 2:
+        print(f"Latent dimension is {model.latent_dim}. Applying t-SNE to reduce to 2 dimensions...")
+        tsne = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=300, init='pca', learning_rate='auto') # Added init and lr for newer sklearn versions
+        latent_vectors_2d = tsne.fit_transform(latent_vectors)
+        plot_title = f"t-SNE Visualization of Latent Space (d={model.latent_dim} -> 2D)"
+        print("t-SNE finished.")
+    else: # latent_dim == 2
+        latent_vectors_2d = latent_vectors # Use original 2D vectors
+    # --- ---
+
+    # Create the plot using the 2D vectors
+    print("Generating plot...")
     plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(latent_vectors[:, 0], latent_vectors[:, 1], c=labels, cmap='tab10', s=5) # Use tab10 colormap, small points
-    
+    scatter = plt.scatter(latent_vectors_2d[:, 0], latent_vectors_2d[:, 1], c=labels, cmap='tab10', s=5, alpha=0.7)
+
     # Add legend
-    handles, _ = scatter.legend_elements(prop='colors')
+    handles, _ = scatter.legend_elements(prop='colors', alpha=1.0)
     unique_labels = np.unique(labels)
     legend_labels = [str(l) for l in unique_labels]
+    try:
+        sorted_indices = np.argsort([int(lbl) for lbl in legend_labels])
+        handles = [handles[i] for i in sorted_indices]
+        legend_labels = [legend_labels[i] for i in sorted_indices]
+    except ValueError:
+        pass
     plt.legend(handles, legend_labels, title="Digits")
 
     # Add labels and title
-    plt.xlabel("Latent Dimension 1 (x)")
-    plt.ylabel("Latent Dimension 2 (y)")
-    plt.title("Latent Space Distribution (MNIST Test Set)")
+    if model.latent_dim > 2:
+        plt.xlabel("t-SNE Dimension 1")
+        plt.ylabel("t-SNE Dimension 2")
+        plt.xlim(-5, 5)
+        plt.ylim(-5, 5)
+    else:
+        plt.xlabel("Latent Dimension 1 (x)")
+        plt.ylabel("Latent Dimension 2 (y)")
+        # Optionally set fixed limits for the d=2 case if needed
+
+    plt.title(plot_title)
     plt.grid(True)
-    
+
     # Save the plot
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path)
     print(f"Latent space plot saved to {save_path}")
-    plt.close() # Close the figure to free memory
+    plt.close()
