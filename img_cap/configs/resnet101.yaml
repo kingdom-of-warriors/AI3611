@@ -1,4 +1,4 @@
-model: resnet101_attention
+model: resnet
 outputpath: experiments/resnet101_attention
 
 dataset_base_path: data

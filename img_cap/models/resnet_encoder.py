@@ -52,18 +52,18 @@ class Encoder(nn.Module):
 
 
 # --- 使用示例 (可选) ---
-if __name__ == '__main__':
-    # 假设 encoded_image_size=14, 对应 vit_b_16 的 224x224 输入
-    encoder = Encoder()
-    encoder.eval() # 设置为评估模式
+# if __name__ == '__main__':
+#     # 假设 encoded_image_size=14, 对应 vit_b_16 的 224x224 输入
+#     encoder = Encoder()
+#     encoder.eval() # 设置为评估模式
 
-    # 创建一个符合 vit_b_16 期望输入的示例批次 (batch_size=4, channels=3, height=224, width=224)
-    # 注意：实际使用时需要进行适当的图像预处理
-    dummy_images = torch.randn(4, 3, 224, 224)
+#     # 创建一个符合 vit_b_16 期望输入的示例批次 (batch_size=4, channels=3, height=224, width=224)
+#     # 注意：实际使用时需要进行适当的图像预处理
+#     dummy_images = torch.randn(4, 3, 224, 224)
 
-    # 前向传播
-    encoded_output = encoder(dummy_images)
+#     # 前向传播
+#     encoded_output = encoder(dummy_images)
 
-    # 打印输出形状 (应为 [4, 14, 14, 768])
-    print("Input shape:", dummy_images.shape)
-    print("Output shape:", encoded_output.shape)
+#     # 打印输出形状 (应为 [4, 14, 14, 768])
+#     print("Input shape:", dummy_images.shape)
+#     print("Output shape:", encoded_output.shape)

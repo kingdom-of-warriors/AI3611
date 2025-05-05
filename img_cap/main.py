@@ -182,12 +182,21 @@ class Runner(object):
         Path(args["outputpath"]).mkdir(parents=True, exist_ok=True)
         logger = get_logger(Path(args["outputpath"]) / "train.log")
 
-        model = Vit_Captioner(encoded_image_size=14,
-                          encoder_dim=768,
-                          attention_dim=args['attention_dim'],
-                          embed_dim=args['embedding_dim'],
-                          decoder_dim=args['decoder_size'],
-                          vocab_size=vocab_size).to(self.device)
+        if args['model'] == 'resnet':
+            model = Res_Captioner(encoded_image_size=14,
+                                encoder_dim=2048, 
+                                attention_dim=args['attention_dim'],
+                                embed_dim=args['embedding_dim'],
+                                decoder_dim=args['decoder_size'], 
+                                vocab_size=vocab_size).to(self.device)
+        
+        elif args['model'] == 'vit':
+            model = Vit_Captioner(encoded_image_size=14,
+                                encoder_dim=768,
+                                attention_dim=args['attention_dim'],
+                                embed_dim=args['embedding_dim'],
+                                decoder_dim=args['decoder_size'],
+                                vocab_size=vocab_size).to(self.device)
         logger.info(model)
         model_path = os.path.join(args["outputpath"],
             f"{args['model']}_b{args['train_args']['batch_size']}_"
@@ -211,12 +220,6 @@ class Runner(object):
                                           loss_fn=loss_fn,
                                           train_loader=dataloaders["train"])
             with torch.no_grad():
-                # train_bleu = self.evaluate_model(
-                    # desc=f'Train eval: ', model=model,
-                    # bleu_score_fn=corpus_bleu_score_fn,
-                    # tensor_to_word_fn=tensor_to_word_fn,
-                    # word2idx=word2idx, sample_method=args['sample_method'],
-                    # data_loader=dataloaders["train_eval"])
                 val_bleu = self.evaluate_model(
                     desc=f'Val eval: ', model=model,
                     bleu_score_fn=corpus_bleu_score_fn,
@@ -313,11 +316,23 @@ class Runner(object):
         test_loader = torch.utils.data.DataLoader(test_set,
             batch_size=1, shuffle=False, collate_fn=eval_collate_fn)
             
-        model = Vit_Captioner(encoded_image_size=14, encoder_dim=768,
-                          attention_dim=args["attention_dim"],
-                          embed_dim=args["embedding_dim"],
-                          decoder_dim=args["decoder_size"],
-                          vocab_size=vocab_size, train_embd=False)
+        if args['model'] == 'resnet':
+            model = Res_Captioner(encoded_image_size=14,
+                                encoder_dim=2048, 
+                                attention_dim=args['attention_dim'],
+                                embed_dim=args['embedding_dim'],
+                                decoder_dim=args['decoder_size'], 
+                                vocab_size=vocab_size).to(self.device)
+    
+        
+        elif args['model'] == 'vit':
+            model = Vit_Captioner(encoded_image_size=14,
+                                encoder_dim=768,
+                                attention_dim=args['attention_dim'],
+                                embed_dim=args['embedding_dim'],
+                                decoder_dim=args['decoder_size'],
+                                vocab_size=vocab_size).to(self.device)
+    
         model_path = os.path.join(args["outputpath"],
             f"{args['model']}_b{args['train_args']['batch_size']}_"
             f"emd{args['embedding_dim']}")

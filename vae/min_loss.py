@@ -23,13 +23,11 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
     model = model.to(device)
     optimizer = Adam(model.parameters(), lr)
 
-    # --- 新增：用于存储每个 epoch 损失的列表 ---
     history = {
         'train_loss': [],
         'recon_loss': [],
         'kl_loss': []
     }
-    # --- 结束新增 ---
 
     # Training Loop
     for epoch in tqdm(range(num_epochs), desc=f"Training Z={latent_dim}"):
@@ -95,16 +93,14 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
         print(f"Loss plot saved to {plot_save_path}")
     except Exception as e:
         print(f"Error saving plot: {e}")
-    # plt.show() # 如果你想在运行时显示图形（需要图形界面环境），取消这行注释
-    plt.close() # 关闭图形，释放内存
+    plt.close()
 
-    # plot_latent_space(model, train_loader, device, save_path=save_dir)
+    # Plot latent space
+    print("Plotting latent space...")
+    plot_latent_space(model, train_loader, device, save_path=save_dir)
     print(f"Finished training VAE with latent_dim = {latent_dim}")
 
-# The main() function remains the same as before
 def main():
-    # 设置设备
-    # 确保 NPU 可用，否则可能需要回退到 CPU
     if torch.cuda.is_available():
         device = torch.device('cuda')
     else:
@@ -115,7 +111,7 @@ def main():
 
     # 加载数据
     print("Loading MNIST dataset...")
-    # For NPU/GPU, pin_memory=True can speed up data transfer
+    # For GPU, pin_memory=True can speed up data transfer
     # num_workers can be adjusted based on your system's cores/IO
     # If running on CPU, set num_workers=0 potentially
     pin_memory_flag = True if device.type != 'cpu' else False
