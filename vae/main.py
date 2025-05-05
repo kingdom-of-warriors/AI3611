@@ -5,13 +5,12 @@ from tqdm import tqdm
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-# Assume model.py contains VAE, train_one_step, evaluate
 from model import VAE, train_one_step, evaluate, generate_and_save_images, plot_latent_space
 import wandb
 
 # --- Wandb Configuration ---
 WANDB_PROJECT = "vae-mnist-example" # Change to your project name
-WANDB_ENTITY = None # Replace with your wandb username or team name if desired
+WANDB_ENTITY = None
 
 def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_epochs=200, batch_size=128, lr=1e-3):
     """Trains a VAE model with specified latent dim and logs to wandb."""
@@ -52,11 +51,7 @@ def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_ep
         total_kl_loss = 0
 
         for batch_idx, (data, _) in enumerate(train_loader):
-            # Assuming train_one_step returns: total_loss, recon_loss, kl_loss for the batch
-            # Ensure these are detached tensors before calling .item() if they require grad
             batch_loss, batch_recon_loss, batch_kl_loss = train_one_step(model, data, optimizer, device)
-
-            # Use .item() to get scalar value and avoid memory leaks
             total_train_loss += batch_loss
             total_recon_loss += batch_recon_loss
             total_kl_loss += batch_kl_loss
@@ -68,24 +63,20 @@ def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_ep
 
         # --- Modified log_dict structure ---
         log_dict = {
-            # Group training losses under "train/losses"
             "train/losses": {
                 "total": avg_train_loss,
                 "reconstruction": avg_recon_loss,
                 "kl_divergence": avg_kl_loss,
             },
-             # You can still log epoch separately if needed, though wandb uses step implicitly
              "epoch": epoch + 1
         }
         # --- End Modification ---
 
         # Evaluate and generate images periodically
         if (epoch + 1) % 20 == 0:
-            # Assuming evaluate returns: avg_val_loss, avg_val_recon_loss, avg_val_kl_loss
             val_loss, val_recon, val_kl = evaluate(model, test_loader, device)
             print(f'\nEpoch: {epoch+1} Val Loss: {val_loss:.4f} Recon: {val_recon:.4f} KL: {val_kl:.4f}')
 
-            # --- Modified log_dict update ---
             # Group validation losses under "val/losses"
             log_dict.update({
                  "val/losses": {
@@ -94,7 +85,6 @@ def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_ep
                     "kl_divergence": val_kl,
                  }
             })
-            # --- End Modification ---
             generate_and_save_images(model, test_loader, epoch, device, save_dir=save_dir)
 
 
@@ -103,21 +93,17 @@ def train_model_with_wandb(latent_dim, train_loader, test_loader, device, num_ep
 
         if (epoch+1) % 5 == 0: # Print average training loss less frequently
              print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
-        # Save model checkpoint every 50 epochs
+        # plot latent space every 50 epochs when latent_dim=2
         if ((epoch + 1) % 50 == 0) & (latent_dim == 2):
             plot_latent_space(model, train_loader, device, save_path=save_dir)
     
-    # --- Finish Wandb Run ---
     run.finish()
     print(f"Finished training VAE with latent_dim = {latent_dim}")
 
-# The main() function remains the same as before
 def main():
-    # 设置设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    # 加载数据
     print("Loading MNIST dataset...")
     train_dataset = datasets.MNIST(root='./data/', train=True, transform=transforms.ToTensor(), download=True)
     test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=True) # Set download=True just in case

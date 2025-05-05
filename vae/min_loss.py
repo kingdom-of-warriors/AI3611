@@ -4,7 +4,7 @@ from torch.optim import Adam
 from tqdm import tqdm
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt # <--- 导入 matplotlib
+import matplotlib.pyplot as plt
 
 # Assume model.py contains VAE, train_one_step, evaluate
 from model import VAE, train_one_step, evaluate, plot_latent_space
@@ -37,7 +37,7 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
         total_kl_loss = 0
 
         for batch_idx, (data, _) in enumerate(train_loader):
-            data = data.to(device) # <--- 确保数据移动到设备
+            data = data.to(device)
             # Assuming train_one_step returns: total_loss, recon_loss, kl_loss for the batch
             # Ensure these are scalar values (e.g., already .item()'d in train_one_step or here)
             batch_loss, batch_recon_loss, batch_kl_loss = train_one_step(model, data, optimizer, device)
@@ -51,12 +51,9 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
         avg_train_loss = total_train_loss / len(train_loader.dataset)
         avg_recon_loss = total_recon_loss / len(train_loader.dataset)
         avg_kl_loss = total_kl_loss / len(train_loader.dataset)
-
-        # --- 新增：记录当前 epoch 的平均损失 ---
         history['train_loss'].append(avg_train_loss)
         history['recon_loss'].append(avg_recon_loss)
         history['kl_loss'].append(avg_kl_loss)
-        # --- 结束新增 ---
 
         # Evaluate and generate images periodically
         if (epoch + 1) % 20 == 0:
@@ -69,24 +66,21 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
              print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
 
     print("Generating loss plot...")
-    # 创建 x 轴的 epoch 列表 (从 1 到 num_epochs)
+
     epochs_range = range(1, num_epochs + 1)
+    plt.figure(figsize=(12, 6))
 
-    plt.figure(figsize=(12, 6)) # 创建图形
-
-    # 绘制三条损失曲线
+    # plot 3 loss lines
     plt.plot(epochs_range, history['train_loss'], label='Total Training Loss', color='blue')
     plt.plot(epochs_range, history['recon_loss'], label='Reconstruction Loss', color='green', linestyle='--')
     plt.plot(epochs_range, history['kl_loss'], label='KL Divergence Loss', color='red', linestyle=':')
 
-    # 添加标题和标签
     plt.title(f'VAE Training Losses (Latent Dim = {latent_dim})')
     plt.xlabel('Epoch')
     plt.ylabel('Average Loss per Sample')
-    plt.legend() # 显示图例
-    plt.grid(True) # 显示网格
+    plt.legend()
+    plt.grid(True)
 
-    # 保存图形到文件
     plot_save_path = os.path.join(save_dir, f'training_losses_z{latent_dim}.png')
     try:
         plt.savefig(plot_save_path)
