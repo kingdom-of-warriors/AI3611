@@ -235,8 +235,6 @@ def plot_latent_space(model, data_loader, device, save_path='./images/latent_spa
     if model.latent_dim > 2:
         plt.xlabel("t-SNE Dimension 1")
         plt.ylabel("t-SNE Dimension 2")
-        plt.xlim(-5, 5)
-        plt.ylim(-5, 5)
     else:
         plt.xlabel("Latent Dimension 1 (x)")
         plt.ylabel("Latent Dimension 2 (y)")
