@@ -6,7 +6,6 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
-# Assume model.py contains VAE, train_one_step, evaluate
 from model import VAE, train_one_step, evaluate, plot_latent_space
 
 def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, batch_size=128, lr=1e-3):
@@ -17,7 +16,6 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    # Initialize Model and Optimizer
     print(f"Training VAE with latent_dim = {latent_dim}")
     model = VAE(latent_dim=latent_dim)
     model = model.to(device)
@@ -38,12 +36,8 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
 
         for batch_idx, (data, _) in enumerate(train_loader):
             data = data.to(device)
-            # Assuming train_one_step returns: total_loss, recon_loss, kl_loss for the batch
-            # Ensure these are scalar values (e.g., already .item()'d in train_one_step or here)
             batch_loss, batch_recon_loss, batch_kl_loss = train_one_step(model, data, optimizer, device)
-
-            # Accumulate *scalar* batch losses
-            total_train_loss += batch_loss # Assume these are already scalars
+            total_train_loss += batch_loss
             total_recon_loss += batch_recon_loss
             total_kl_loss += batch_kl_loss
 
@@ -60,9 +54,8 @@ def train_model(latent_dim, train_loader, test_loader, device, num_epochs=200, b
             val_loss, val_recon, val_kl = evaluate(model, test_loader, device)
             print(f'\nEpoch: {epoch+1} Val Loss: {val_loss:.4f} Recon: {val_recon:.4f} KL: {val_kl:.4f}')
 
-        # Print average training loss (maybe less frequently or combined with eval)
         # Keep your original printing logic or adjust as needed
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 10 == 0:
              print(f'Epoch: {epoch+1}, Avg Train Loss: {avg_train_loss:.4f} (Recon: {avg_recon_loss:.4f}, KL: {avg_kl_loss:.4f})')
 
     print("Generating loss plot...")
@@ -109,11 +102,9 @@ def main():
     # num_workers can be adjusted based on your system's cores/IO
     # If running on CPU, set num_workers=0 potentially
     pin_memory_flag = True if device.type != 'cpu' else False
-    num_workers_flag = 4 # Adjust based on system
-
+    num_workers_flag = 4
     train_dataset = datasets.MNIST(root='./data/', train=True, transform=transforms.ToTensor(), download=True)
     test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=True)
-
     batch_size = 128
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True,
                               num_workers=num_workers_flag, pin_memory=pin_memory_flag, drop_last=True) # Added drop_last
