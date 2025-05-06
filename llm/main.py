@@ -106,12 +106,17 @@ print ("Total number of model parameters: {:.2f}M".format(num_params*1.0/1e6))
 
 best_val_loss = None
 lr = args.lr
+model_type = None # RNNModel and Transformer
 # At any point you can hit Ctrl + C to break out of training early.
 try:
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
-        train_loss = train(model, args.model, corpus, train_data, criterion, lr, args.clip, args.bptt, args.batch_size, epoch, args.log_interval, args.dry_run)
-        val_loss = evaluate(model, args.model, corpus, val_data, args.batch_size, args.bptt, criterion)
+        if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
+            model_type = "RNNModel"
+        else: 
+            model_type = "Transformer"
+        train_loss = train(model, model_type, corpus, train_data, criterion, lr, args.clip, args.bptt, args.batch_size, epoch, args.log_interval, args.dry_run)
+        val_loss = evaluate(model, model_type, corpus, val_data, args.batch_size, args.bptt, criterion)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                 'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
@@ -167,7 +172,7 @@ with open(best_model_path, 'rb') as f:
         model.rnn.flatten_parameters()
 
 # Run on test data.
-test_loss = evaluate(model, args.model, corpus, test_data, args.batch_size, args.bptt, criterion)
+test_loss = evaluate(model, model_type, corpus, test_data, args.batch_size, args.bptt, criterion)
 print('=' * 89)
 print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
     test_loss, math.exp(test_loss)))
