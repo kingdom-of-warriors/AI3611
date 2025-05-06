@@ -9,6 +9,6 @@
 
 module load openjdk/11.0.17_8
 
-python main.py train_evaluate --config_file configs/resnet101.yaml
+python main.py train_evaluate --config_file configs/resnet.yaml
 python main.py train_evaluate --config_file configs/vit.yaml
 

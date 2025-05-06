@@ -12,16 +12,18 @@ class Res_Captioner(nn.Module):
         self.decoder = DecoderWithAttention(attention_dim, embed_dim,
             decoder_dim, vocab_size, encoder_dim, dropout)
 
-    def forward(self, images, encoded_captions, caption_lengths):
+    def forward(self, images, encoded_captions, caption_lengths, teacher_forcing_ratio=1.0):
         """
         :param images: [b, 3, h, w]
         :param encoded_captions: [b, max_len]
         :param caption_lengths: [b,]
+        :param teacher_forcing_ratio: probability for teacher forcing
         :return:
         """
         encoder_out = self.encoder(images)
         decoder_out = self.decoder(encoder_out, encoded_captions,
-                                   caption_lengths.unsqueeze(1))
+                                   caption_lengths.unsqueeze(1),
+                                   teacher_forcing_ratio=teacher_forcing_ratio)
         return decoder_out
 
     def sample(self, images, startseq_idx, endseq_idx=-1, max_len=40,
@@ -40,16 +42,18 @@ class Vit_Captioner(nn.Module):
         self.decoder = DecoderWithAttention(attention_dim, embed_dim,
             decoder_dim, vocab_size, encoder_dim, dropout)
 
-    def forward(self, images, encoded_captions, caption_lengths):
+    def forward(self, images, encoded_captions, caption_lengths, teacher_forcing_ratio=1.0):
         """
         :param images: [b, 3, h, w]
         :param encoded_captions: [b, max_len]
         :param caption_lengths: [b,]
+        :param teacher_forcing_ratio: probability for teacher forcing
         :return:
         """
         encoder_out = self.encoder(images)
         decoder_out = self.decoder(encoder_out, encoded_captions,
-                                   caption_lengths.unsqueeze(1))
+                                   caption_lengths.unsqueeze(1),
+                                   teacher_forcing_ratio=teacher_forcing_ratio)
         return decoder_out
 
     def sample(self, images, startseq_idx, endseq_idx=-1, max_len=40,

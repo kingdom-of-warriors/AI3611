@@ -13,6 +13,10 @@ train_args:
     learning_rate: !!float 1e-3
     num_epochs: 45
     save_freq: 10
+    # --- Scheduled Sampling Parameters ---
+    scheduled_sampling_on: True       # 是否使用 Scheduled Sampling 
+    ss_start_prob: 1.0                # 训练开始时的 teacher forcing 概率
+    ss_end_prob: 0.0                  # 训练结束时的 teacher forcing 概率
 eval_args:
     batch_size: 1
 

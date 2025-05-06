@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import math
+import random
 
 class Attention(nn.Module):
     """
@@ -99,13 +100,14 @@ class DecoderWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
-    def forward(self, encoder_out, encoded_captions, caption_lengths):
+    def forward(self, encoder_out, encoded_captions, caption_lengths, teacher_forcing_ratio=1.0):
         """
         Forward propagation.
 
         :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
         :param encoded_captions: encoded captions, a tensor of dimension (batch_size, max_caption_length)
         :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
+        :param teacher_forcing_ratio: probability to use teacher forcing.
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
 
@@ -147,6 +149,21 @@ class DecoderWithAttention(nn.Module):
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
         for t in range(max(decode_lengths)):
             batch_size_t = sum([l > t for l in decode_lengths])
+            current_input_token_embeddings = None
+            use_teacher_forcing_for_step = random.random() < teacher_forcing_ratio
+
+            if t == 0: # Always use <start> token for the first step
+                current_input_token_embeddings = embeddings[:batch_size_t, t, :]
+            else:
+                if use_teacher_forcing_for_step:
+                    current_input_token_embeddings = embeddings[:batch_size_t, t, :]
+                else:
+                    # Use model's own prediction from the previous step
+                    # predictions stores raw scores from the FC layer for the previous timestep
+                    with torch.no_grad(): # Avoid tracking gradients for this part
+                        predicted_token_indices = torch.argmax(predictions[:batch_size_t, t - 1, :], dim=1)
+                    current_input_token_embeddings = self.embedding(predicted_token_indices)
+
             # [b, encoder_dim], [b, num_pixels] -> [batch_size_t, encoder_dim], [batch_size_t, num_pixels]
             attention_weighted_encoding, alpha = self.attention(encoder_out[:batch_size_t],
                                                                 h[:batch_size_t])
@@ -155,7 +172,7 @@ class DecoderWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
             # [batch_size_t, decoder_dim]
             h, c = self.decode_step(
-                torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
+                torch.cat([current_input_token_embeddings, attention_weighted_encoding], dim=1), # 使用 current_input_token_embeddings
                 (h[:batch_size_t], c[:batch_size_t]))
             # [batch_size_t, vocab_size]
             preds = self.fc(self.dropout(h))

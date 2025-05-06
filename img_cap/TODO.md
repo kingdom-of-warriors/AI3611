@@ -1,7 +1,7 @@
 # Project Roadmap
 
 ## Feature Implementations
-- [ ] Implement multi-encoder architecture support
+- [X] Implement multi-encoder architecture support
   - Add compatibility for both ResNet and Vision Transformer encoders
   - Ensure seamless switching between encoder types
 

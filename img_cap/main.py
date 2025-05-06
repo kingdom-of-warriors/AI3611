@@ -95,7 +95,7 @@ class Runner(object):
             "test": test_loader
         }
 
-    def train_model(self, train_loader, model, loss_fn, optimizer, desc=''):
+    def train_model(self, train_loader, model, loss_fn, optimizer, desc='', teacher_forcing_ratio=1.0):
         running_acc = 0.0
         running_loss = 0.0
         model.train()
@@ -107,7 +107,7 @@ class Runner(object):
             optimizer.zero_grad()
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = model(
-                images, captions, lengths)
+                images, captions, lengths, teacher_forcing_ratio=teacher_forcing_ratio)
 
             # Since decoding starts with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -213,12 +213,33 @@ class Runner(object):
         train_loss_min = 100
         val_bleu4_max = 0.0
         num_epochs = args["train_args"]["num_epochs"]
+
+        # --- Scheduled Sampling Parameter Reading (Direct Access) ---
+        train_args_config = args["train_args"]
+        ss_on = train_args_config['scheduled_sampling_on']
+        ss_start_prob = float(train_args_config['ss_start_prob'])
+        ss_end_prob = float(train_args_config['ss_end_prob'])
+
+        # --- End of Scheduled Sampling Parameter Reading ---
+        # --- Scheduled Sampling training ---
         for epoch in range(num_epochs):
-            train_loss = self.train_model(desc=f'Epoch {epoch + 1}/{num_epochs}',
+            current_teacher_forcing_ratio = 1.0  # 默认值
+            if ss_on and num_epochs > 0:
+                if num_epochs == 1: current_teacher_forcing_ratio = ss_start_prob
+                else: progress = float(epoch) / (num_epochs - 1)
+                current_teacher_forcing_ratio = ss_start_prob - (ss_start_prob - ss_end_prob) * progress # 使用线性减少
+            elif not ss_on:
+                current_teacher_forcing_ratio = 1.0
+            desc_str = f'Epoch {epoch + 1}/{num_epochs}'
+            if ss_on:
+                desc_str += f' TF_Ratio={current_teacher_forcing_ratio:.3f}'
+            train_loss = self.train_model(desc=desc_str,
                                           model=model,
                                           optimizer=optimizer,
                                           loss_fn=loss_fn,
-                                          train_loader=dataloaders["train"])
+                                          train_loader=dataloaders["train"],
+                                          teacher_forcing_ratio=current_teacher_forcing_ratio)
+        # --- End of Scheduled Sampling training ---
             with torch.no_grad():
                 val_bleu = self.evaluate_model(
                     desc=f'Val eval: ', model=model,
