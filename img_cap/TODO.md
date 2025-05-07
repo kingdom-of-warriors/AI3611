@@ -6,7 +6,7 @@
   - Ensure seamless switching between encoder types
 
 ## Training Enhancements
-- [ ] Implement scheduled sampling mechanism
+- [X] Implement scheduled sampling mechanism
   - Gradually transition from teacher forcing to model predictions
   - Add configurable sampling ratio scheduling
 
@@ -17,6 +17,6 @@
   - Conduct comparative analysis between samples
 
 ## Dataset Expansion
-- [ ] Scale up to larger dataset
+- [X] Scale up to larger dataset
   - Integrate complete Flickr40k dataset
   - Optimize data loading pipeline for larger dataset

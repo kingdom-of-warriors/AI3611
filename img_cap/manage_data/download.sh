@@ -1,0 +1,1 @@
+huggingface-cli download nlphuji/flickr30k flickr30k-images.zip flickr_annotations_30k.csv --repo-type dataset --local-dir data/flickr30k

@@ -13,7 +13,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from datasets.flickr8k import Flickr8kDataset
+from datasets.flickr import Flickr8kDataset
 from utils.metrics import bleu_score_fn
 from utils.utils_torch import words_from_tensors_fn
 from utils.util import get_logger
