@@ -217,6 +217,7 @@ class Runner(object):
         # --- Scheduled Sampling Parameter Reading (Direct Access) ---
         train_args_config = args["train_args"]
         ss_on = train_args_config['scheduled_sampling_on']
+        ss_type = train_args_config['ss_type']
         ss_start_prob = float(train_args_config['ss_start_prob'])
         ss_end_prob = float(train_args_config['ss_end_prob'])
 
@@ -225,21 +226,37 @@ class Runner(object):
         for epoch in range(num_epochs):
             current_teacher_forcing_ratio = 1.0  # 默认值
             if ss_on and num_epochs > 0:
-                if num_epochs == 1: current_teacher_forcing_ratio = ss_start_prob
-                else: progress = float(epoch) / (num_epochs - 1)
-                current_teacher_forcing_ratio = ss_start_prob - (ss_start_prob - ss_end_prob) * progress # 使用线性减少
+                if num_epochs == 1: 
+                    current_teacher_forcing_ratio = ss_start_prob
+                else:
+                    progress = float(epoch) / (num_epochs - 1)
+                    if ss_type == 'linear':
+                        # 线性调度
+                        current_teacher_forcing_ratio = ss_start_prob - (ss_start_prob - ss_end_prob) * progress
+                    elif ss_type == 'exponential':
+                        # 指数调度：teacher_forcing_ratio = start_prob * (end_prob/start_prob)^progress
+                        current_teacher_forcing_ratio = ss_start_prob * ((ss_end_prob / ss_start_prob) ** progress)
+                    elif ss_type == 'sigmoid':
+                        # Sigmoid调度：在训练中期变化更快，两端变化更慢
+                        # 将progress从[0,1]映射到[-6,6]范围内，使sigmoid函数有较好的过渡效果
+                        x = 12 * progress - 6
+                        sigmoid = 1 / (1 + np.exp(-x))  # 从0到1的值
+                        current_teacher_forcing_ratio = ss_start_prob + (ss_end_prob - ss_start_prob) * sigmoid
+                    else:
+                        # 默认为线性调度
+                        current_teacher_forcing_ratio = ss_start_prob - (ss_start_prob - ss_end_prob) * progress
             elif not ss_on:
                 current_teacher_forcing_ratio = 1.0
             desc_str = f'Epoch {epoch + 1}/{num_epochs}'
             if ss_on:
-                desc_str += f' TF_Ratio={current_teacher_forcing_ratio:.3f}'
+                desc_str += f' TF_Ratio={current_teacher_forcing_ratio:.3f} ({ss_type})'
+                
             train_loss = self.train_model(desc=desc_str,
                                           model=model,
                                           optimizer=optimizer,
                                           loss_fn=loss_fn,
                                           train_loader=dataloaders["train"],
                                           teacher_forcing_ratio=current_teacher_forcing_ratio)
-        # --- End of Scheduled Sampling training ---
             with torch.no_grad():
                 val_bleu = self.evaluate_model(
                     desc=f'Val eval: ', model=model,
