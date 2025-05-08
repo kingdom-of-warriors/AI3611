@@ -263,16 +263,24 @@ class Runner(object):
                     'val_bleus': val_bleu,
                 }
                 torch.save(state, '{}_latest.pt'.format(model_path))
+                logger.info(f"模型已保存: {model_path}_latest.pt (最新模型)")
                 if train_loss < train_loss_min:
                     train_loss_min = train_loss
                     torch.save(state, '{}_best_train.pt'.format(model_path))
+                    logger.info(f"模型已保存: {model_path}_best_train.pt (最佳训练损失: {train_loss:.4f})")
                 if val_bleu[4] > val_bleu4_max:
                     val_bleu4_max = val_bleu[4]
                     torch.save(state, '{}_best_val.pt'.format(model_path))
-        torch.save(state, f'{model_path}_ep{num_epochs:02d}_weights.pt')
+                    logger.info(f"模型已保存: {model_path}_best_val.pt (最佳验证 BLEU-4: {val_bleu[4]:.4f})")
+        final_model_path = f'{model_path}_ep{num_epochs:02d}_weights.pt'
+        torch.save(state, final_model_path)
+        logger.info(f"训练完成，最终模型已保存: {final_model_path}")
+        logger.info(f"模型信息 - 类型: {args['model']}, 嵌入维度: {args['embedding_dim']}, 解码器大小: {args['decoder_size']}")
+        logger.info(f"训练结果 - 最佳训练损失: {train_loss_min:.4f}, 最佳验证 BLEU-4: {val_bleu4_max:.4f}")
 
         state = torch.load(f'{model_path}_best_val.pt', map_location="cpu")
         model.load_state_dict(state["state_dict"])
+        logger.info(f"加载用于评估的最佳验证模型 (Epoch {state['epoch']})")
 
         with torch.no_grad():
             model.eval()

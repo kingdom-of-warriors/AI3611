@@ -1,7 +1,7 @@
 model: vit
 outputpath: experiments/vit
 
-dataset_base_path: data
+dataset_base_path: data/flickr8k
 vocab_path: utils/vocab_set.pkl
 image_len: 224
 embedding_dim: 300
@@ -11,12 +11,13 @@ sample_method: greed # 'greed' or 'beam'
 train_args:
     batch_size: 128
     learning_rate: !!float 1e-3
-    num_epochs: 45
+    num_epochs: 30
     save_freq: 10
     # --- Scheduled Sampling Parameters ---
     scheduled_sampling_on: True       # 是否使用 Scheduled Sampling 
+    ss_type: 'linear'
     ss_start_prob: 1.0                # 训练开始时的 teacher forcing 概率
-    ss_end_prob: 0.0                  # 训练结束时的 teacher forcing 概率
+    ss_end_prob: 0.2                  # 训练结束时的 teacher forcing 概率
 eval_args:
     batch_size: 1
 
