@@ -38,3 +38,11 @@ python evaluate.py --prediction_file prediction.json \
                    --output_file result.txt
 ```
 
+## 扩展数据集
+在网上搜查后得知，flickr还有一个30k的大数据集版本，于是我将其下载下来整合为了本项目需要的格式，并上传到了huggingface上。下载方式如下：
+```bash
+huggingface-cli download jiarui1/flickr flickr30k.zip --repo-type dataset --local-dir data # 在img_cap路径下运行
+unzip data/flickr30k.zip # 解压文件
+rm -rf data/flickr30k.zip # 删除压缩文件
+```
+然后修改yaml文件中的数据集路径即可。最后训练出的结果如图：
