@@ -33,9 +33,9 @@ evaluate.py 用于计算指标，预测结果 `prediction.json` 写成这样的�
 ```
 调用方法：
 ```bash
-python evaluate.py --prediction_file prediction.json \
-                   --reference_file /lustre/home/acct-stu/stu168/data/image_captioning/flickr8k/caption.txt \
-                   --output_file result.txt
+python evaluate.py --prediction_file /root/autodl-tmp/AI3611/img_cap/experiments/vit/30k/vit_b128_emd300_predictions.json \
+                   --reference_file data/flickr30k/caption.txt \
+                   --output_file /root/autodl-tmp/AI3611/img_cap/experiments/vit/30k/result.txt
 ```
 
 ## 扩展数据集
