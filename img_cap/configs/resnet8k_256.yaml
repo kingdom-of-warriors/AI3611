@@ -1,7 +1,7 @@
 model: resnet
-outputpath: experiments/resnet
+outputpath: experiments/resnet/8k_embed256
 
-dataset_base_path: data/flickr30k
+dataset_base_path: data/flickr8k
 vocab_path: utils/vocab_set.pkl
 image_len: 256
 embedding_dim: 300
@@ -15,7 +15,7 @@ train_args:
     save_freq: 10
     # --- Scheduled Sampling Parameters ---
     scheduled_sampling_on: False      # 是否使用 Scheduled Sampling 
-    ss_type: 'linear'
+    ss_type: 'sigmoid'
     ss_start_prob: 1.0                # 训练开始时的 teacher forcing 概率
     ss_end_prob: 0.2                  # 训练结束时的 teacher forcing 概率
 eval_args:

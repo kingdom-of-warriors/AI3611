@@ -37,16 +37,19 @@ class Runner(object):
         self.device = torch.device(device)
     
     def get_dataloaders(self, dataset_base_path, batch_size, img_len):
+        # Get different train dataset: flickr8k or flickr30k
         train_set = Flickr8kDataset(
             dataset_base_path=dataset_base_path, dist='train',
             return_type='tensor', load_img_to_memory=False)
         vocab_set = train_set.get_vocab()
+        # Get same val dataset: flickr8k
         val_set = Flickr8kDataset(
-            dataset_base_path=dataset_base_path, dist='val',
+            dataset_base_path="data/flickr8k", dist='val',
             vocab_set=vocab_set, return_type='corpus',
             load_img_to_memory=False)
+        # Get same test dataset: flickr8k
         test_set = Flickr8kDataset(
-            dataset_base_path=dataset_base_path, dist='test',
+            dataset_base_path="data/flickr8k", dist='test',
             vocab_set=vocab_set, return_type='corpus',
             load_img_to_memory=False)
         train_eval_set = Flickr8kDataset(
@@ -198,6 +201,11 @@ class Runner(object):
                                 decoder_dim=args['decoder_size'],
                                 vocab_size=vocab_size).to(self.device)
         logger.info(model)
+        # 计算模型总参数量
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        logger.info(f"模型总参数量: {total_params:,}，可训练参数: {trainable_params:,}")
+        
         model_path = os.path.join(args["outputpath"],
             f"{args['model']}_b{args['train_args']['batch_size']}_"
             f"emd{args['embedding_dim']}")
@@ -340,7 +348,8 @@ class Runner(object):
         args = dict(config, **kwargs)
 
         vocab_set = pickle.load(open(args['vocab_path'], "rb"))
-        test_set = Flickr8kDataset(dataset_base_path=args['dataset_base_path'],
+        # Load the same dataset: flick8k
+        test_set = Flickr8kDataset(dataset_base_path="data/flickr8k",
                                    dist='test', vocab_set=vocab_set,
                                    return_type='corpus',
                                    load_img_to_memory=False)

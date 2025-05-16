@@ -1,9 +1,9 @@
-model: resnet
-outputpath: experiments/resnet
+model: vit
+outputpath: experiments/vit/8k_embeded300
 
 dataset_base_path: data/flickr8k
 vocab_path: utils/vocab_set.pkl
-image_len: 256
+image_len: 224
 embedding_dim: 300
 attention_dim: 256
 decoder_size: 256
@@ -14,7 +14,7 @@ train_args:
     num_epochs: 30
     save_freq: 10
     # --- Scheduled Sampling Parameters ---
-    scheduled_sampling_on: True      # 是否使用 Scheduled Sampling 
+    scheduled_sampling_on: False       # 是否使用 Scheduled Sampling 
     ss_type: 'sigmoid'
     ss_start_prob: 1.0                # 训练开始时的 teacher forcing 概率
     ss_end_prob: 0.2                  # 训练结束时的 teacher forcing 概率
