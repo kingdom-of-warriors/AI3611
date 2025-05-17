@@ -82,35 +82,28 @@ class VitEncoder(nn.Module):
                  print(f"ViTEncoder Warning: Could not fine-tune last {num_blocks_to_tune} blocks. "
                        "Check model structure or num_blocks_to_tune value.")
 
-            # (可选) 解冻其他可能需要微调的部分，例如 patch embedding 或最终的 LayerNorm
-            # if hasattr(self.vit, 'conv_proj'):
-            #     for param in self.vit.conv_proj.parameters():
-            #         param.requires_grad = True
-            # if hasattr(self.vit, 'ln'): # 如果使用了最终的 Layer Normalization
-            #      for param in self.vit.ln.parameters():
-            #          param.requires_grad = True
 
 # --- 使用示例 (可选) ---
-if __name__ == '__main__':
-    encoder = VitEncoder(encoded_image_size=14, model_name='vit_b_16', pretrained=True)
-    encoder.eval() # 设置为评估模式
+# if __name__ == '__main__':
+#     encoder = VitEncoder(encoded_image_size=14, model_name='vit_b_16', pretrained=True)
+#     encoder.eval() # 设置为评估模式
 
-    # 创建一个符合 vit_b_16 期望输入的示例批次 (batch_size=4, channels=3, height=224, width=224)
-    dummy_images = torch.randn(4, 3, 224, 224)
+#     # 创建一个符合 vit_b_16 期望输入的示例批次 (batch_size=4, channels=3, height=224, width=224)
+#     dummy_images = torch.randn(4, 3, 224, 224)
 
-    # 前向传播
-    encoded_output = encoder(dummy_images)
+#     # 前向传播
+#     encoded_output = encoder(dummy_images)
 
-    # 打印输出形状 (应为 [4, 14, 14, 768])
-    print("Input shape:", dummy_images.shape)
-    print("Output shape:", encoded_output.shape)
-    print("Feature dimension:", encoder.feature_dim)
+#     # 打印输出形状 (应为 [4, 196, 768])
+#     print("Input shape:", dummy_images.shape)
+#     print("Output shape:", encoded_output.shape)
+#     print("Feature dimension:", encoder.feature_dim)
 
-    # 测试微调设置
-    print("\nTesting fine-tuning:")
-    encoder.fine_tune(fine_tune=True, num_blocks_to_tune=2)
-    # 检查最后两个块的参数是否需要梯度
-    for i, layer in enumerate(encoder.vit.encoder.layers):
-        requires_grad_list = [p.requires_grad for p in layer.parameters()]
-        all_require_grad = all(requires_grad_list)
-        print(f"Block {i} requires_grad: {all_require_grad}")
+#     # 测试微调设置
+#     print("\nTesting fine-tuning:")
+#     encoder.fine_tune(fine_tune=True, num_blocks_to_tune=2)
+#     # 检查最后两个块的参数是否需要梯度
+#     for i, layer in enumerate(encoder.vit.encoder.layers):
+#         requires_grad_list = [p.requires_grad for p in layer.parameters()]
+#         all_require_grad = all(requires_grad_list)
+#         print(f"Block {i} requires_grad: {all_require_grad}")
