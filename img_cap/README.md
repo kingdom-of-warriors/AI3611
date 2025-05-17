@@ -45,7 +45,12 @@ huggingface-cli download jiarui1/flickr flickr30k.zip --repo-type dataset --loca
 unzip data/flickr30k.zip # 解压文件
 rm -rf data/flickr30k.zip # 删除压缩文件
 ```
-然后修改yaml文件中的数据集路径即可。最后训练出的结果如图：
+然后修改yaml文件中的数据集路径即可。最后训练出的结果如表格所示：
+
+| **Model**  | **Training Dataset** | **BLEU-4** | **ROUGE-L** | **METEOR** | **CIDEr** | **SPICE** | **SPIDEr** |
+|------------|----------------------|------------|-------------|------------|-----------|-----------|------------|
+| ViT-B/16   | Flickr8k             | 0.202      | 0.425       | 0.208      | 0.538     | 0.149     | 0.344      |
+| ViT-B/16   | Flickr30k            | **0.253**  | **0.465**   | **0.230**  | **0.721** | **0.176** | **0.449**  |
 
 ## 获取最佳结果
 ### 训练最佳模型
