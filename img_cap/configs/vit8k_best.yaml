@@ -1,8 +1,8 @@
 model: vit
-outputpath: experiments/vit/8k_embeded300
+outputpath: experiments/vit/8k_best
 
 dataset_base_path: data/flickr8k
-vocab_path: utils/vocab_set.pkl
+vocab_path: utils/vocab_set8k.pkl
 image_len: 224
 embedding_dim: 300
 attention_dim: 256
@@ -14,10 +14,12 @@ train_args:
     num_epochs: 30
     save_freq: 10
     # --- Scheduled Sampling Parameters ---
-    scheduled_sampling_on: False       # 是否使用 Scheduled Sampling 
+    scheduled_sampling_on: False       # 不使用 Scheduled Sampling 
     ss_type: 'sigmoid'
     ss_start_prob: 1.0                # 训练开始时的 teacher forcing 概率
     ss_end_prob: 0.2                  # 训练结束时的 teacher forcing 概率
 eval_args:
     batch_size: 1
 
+test_model_path: ckpt/vit8k.pt
+test_result_path: results/vit8k
